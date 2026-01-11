@@ -66,8 +66,7 @@ The pipeline follows these steps for each image:
 If you suspect a measurement is incorrect, you can manually verify and fix it using FIJI/ImageJ.
 
 **Video Tutorial:**
-<video src="roi_verification_screencast.webm" controls="controls" style="max-width: 100%;">
-</video>
+[Click here to watch the screencast (roi_verification_screencast.webm)](roi_verification_screencast.webm)
 
 ### Steps to Edit and Re-measure:
 1.  **Open Image**: Drag the original image in FIJI.
