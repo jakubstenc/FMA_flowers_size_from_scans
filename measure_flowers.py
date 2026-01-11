@@ -3,6 +3,8 @@ import numpy as np
 import os
 import csv
 import glob
+import zipfile
+import roi_writer
 
 # Constants
 DPI = 1200
@@ -131,7 +133,9 @@ def process_image(filepath, output_dir=None, bg_mode='dark'):
     img_area = img.shape[0] * img.shape[1]
     max_area_threshold = img_area * 0.10 # 10% of image size
 
-    # Prepare Annotation Image
+    # Prepare Annotation Image and ROIs
+    rois_bytes = []
+    
     if output_dir:
         annotated_img = img_corrected.copy()
         # Draw Label Box (Red)
@@ -140,7 +144,7 @@ def process_image(filepath, output_dir=None, bg_mode='dark'):
              # Draw box (Visual only, analysis uses the masked version)
              cv2.rectangle(annotated_img, (x, y), (x+w_r, y+h_r), (0, 0, 255), 3)
 
-    for cnt in contours:
+    for i, cnt in enumerate(contours):
         area = cv2.contourArea(cnt)
         
         # Filter:
@@ -175,6 +179,10 @@ def process_image(filepath, output_dir=None, bg_mode='dark'):
         valid_contours.append(cnt)
         total_area_px += area
         
+        # Create ROI
+        roi_data = roi_writer.create_roi(cnt, img.shape[0], img.shape[1])
+        rois_bytes.append((f"{filename}-roi-{i+1}.roi", roi_data))
+        
         # Individual Annotation
         if output_dir:
             # Draw Outline (Green)
@@ -208,6 +216,18 @@ def process_image(filepath, output_dir=None, bg_mode='dark'):
         out_path = os.path.join(output_dir, filename)
         cv2.imwrite(out_path, annotated_img)
         print(f"Saved {out_path}")
+        
+    # Save ROIs to Zip
+    roi_dir = 'rois'
+    if not os.path.exists(roi_dir):
+        os.makedirs(roi_dir)
+        
+    zip_path = os.path.join(roi_dir, f"{filename}.zip")
+    with zipfile.ZipFile(zip_path, 'w') as zf:
+        for roi_name, roi_data in rois_bytes:
+            zf.writestr(roi_name, roi_data)
+            
+    print(f"Saved ROIs to {zip_path}")
 
     return filename, total_area_px, total_area_mm2
 
